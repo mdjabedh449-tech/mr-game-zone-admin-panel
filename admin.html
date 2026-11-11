@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080808">
+  <title>M.R GAME ZONE | Admin Panel</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <section id="loginPage" class="login-wrap">
+    <form id="loginForm" class="login-card">
+      <div class="brand-mark">MR</div>
+      <p class="eyebrow">CONTROL CENTER</p>
+      <h1>M.R GAME ZONE</h1>
+      <p class="muted">Administrator sign in</p>
+      <label for="email">Admin email</label>
+      <input id="email" type="email" autocomplete="username" placeholder="admin@example.com" required>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="Password" required>
+      <button class="primary full" type="submit">Sign in</button>
+      <p id="loginMsg" class="message" role="alert"></p>
+    </form>
+  </section>
+
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="side-brand"><span class="brand-mark small">MR</span><div><b>M.R GAME ZONE</b><small>ADMIN PANEL</small></div></div>
+      <nav>
+        <button class="nav-btn active" data-page="dashboard">▦ <span>Dashboard</span></button>
+        <button class="nav-btn" data-page="products">▣ <span>Products</span></button>
+        <button class="nav-btn" data-page="orders">▤ <span>Orders</span></button>
+      </nav>
+      <button id="logoutBtn" class="logout">↪ Sign out</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><p class="eyebrow">MANAGEMENT</p><h2 id="pageTitle">Dashboard</h2></div>
+        <div class="admin-pill"><span class="online-dot"></span><span id="adminEmail">Admin</span></div>
+      </header>
+
+      <section id="dashboardPage" class="page">
+        <div class="welcome"><div><p class="eyebrow">OVERVIEW</p><h1>Welcome back, Admin</h1><p class="muted">Manage your store from one place.</p></div><span class="welcome-icon">◆</span></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span>Total products</span><strong id="productCount">—</strong><small>In your catalogue</small></article>
+          <article class="stat-card"><span>Total orders</span><strong id="orderCount">—</strong><small>Orders received</small></article>
+          <article class="stat-card"><span>Pending orders</span><strong id="pendingCount">—</strong><small>Need attention</small></article>
+        </div>
+        <article class="panel"><div class="panel-head"><div><p class="eyebrow">LATEST ACTIVITY</p><h3>Recent orders</h3></div><button class="text-btn" data-goto="orders">View all →</button></div><div id="recentOrders" class="table-wrap"><p class="muted">Loading…</p></div></article>
+      </section>
+
+      <section id="productsPage" class="page hidden">
+        <div class="section-heading"><div><p class="eyebrow">CATALOGUE</p><h1>Products</h1></div><button id="newProductBtn" class="primary">＋ Add product</button></div>
+        <article id="productFormPanel" class="panel hidden">
+          <div class="panel-head"><h3 id="formTitle">Add product</h3><button id="cancelProductBtn" class="icon-btn" aria-label="Close">✕</button></div>
+          <form id="productForm" class="form-grid">
+            <input id="productId" type="hidden">
+            <div><label for="productName">Product name *</label><input id="productName" required maxlength="100" placeholder="Gaming headset"></div>
+            <div><label for="productPrice">Price (৳) *</label><input id="productPrice" type="number" min="0" step="0.01" required placeholder="1500"></div>
+            <div><label for="productCategory">Category</label><input id="productCategory" maxlength="60" placeholder="Gaming Accessories"></div>
+            <div><label for="productStock">Stock</label><input id="productStock" type="number" min="0" step="1" value="0"></div>
+            <div class="wide"><label for="productImage">Image URL</label><input id="productImage" type="url" placeholder="https://example.com/product.jpg"></div>
+            <div class="wide"><label for="productDescription">Description</label><textarea id="productDescription" rows="3" maxlength="1000" placeholder="Product details…"></textarea></div>
+            <div class="wide form-actions"><button class="primary" type="submit">Save product</button><button id="cancelProductBtn2" class="secondary" type="button">Cancel</button></div>
+          </form>
+        </article>
+        <article class="panel"><div class="panel-head"><h3>All products</h3><button id="refreshProducts" class="secondary">Refresh</button></div><div id="productList" class="table-wrap"><p class="muted">Loading…</p></div></article>
+      </section>
+
+      <section id="ordersPage" class="page hidden">
+        <div class="section-heading"><div><p class="eyebrow">SALES</p><h1>Orders</h1></div><button id="refreshOrders" class="secondary">Refresh</button></div>
+        <article class="panel"><div id="orderList" class="table-wrap"><p class="muted">Loading…</p></div></article>
+      </section>
+      <p id="globalMsg" class="global-message" role="status"></p>
+    </main>
+  </div>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

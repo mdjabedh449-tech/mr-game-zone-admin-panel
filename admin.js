@@ -48,8 +48,8 @@ function renderOrders() {
  const entries=Object.entries(orders).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
  $("orderCount").textContent=entries.length;
  $("pendingCount").textContent=entries.filter(([,o])=>(o.status||"Pending")==="Pending").length;
- const html=entries.map(([id,o])=>'<tr><td>'+escapeHtml(id.slice(-7))+'</td><td>'+escapeHtml(o.customer?.name)+'</td><td>'+escapeHtml(o.customer?.phone)+'</td><td>'+money(o.total)+'</td><td><select class="status-select" data-status="'+id+'">'+["Pending","Confirmed","Processing","Shipped","Delivered","Cancelled"].map(s=>'<option '+((o.status||"Pending")===s?"selected":"")+'>'+s+'</option>').join("")+'</select></td></tr>').join("");
- const table=entries.length?'<table><thead><tr><th>Order ID</th><th>Customer</th><th>Phone</th><th>Total</th><th>Status</th></tr></thead><tbody>'+html+'</tbody></table>':'<p class="muted">এখনো কোনো Order আসেনি।</p>';
+ const html=entries.map(([id,o])=>'<tr><td>'+escapeHtml(id.slice(-7))+'</td><td>'+escapeHtml(o.customer?.name)+'</td><td>'+escapeHtml(o.customer?.phone)+'</td><td>'+((o.items||[]).map(x=>escapeHtml(x.name)+' × '+Number(x.quantity||0)+' ('+escapeHtml(x.size||'—')+', '+escapeHtml(x.color||'—')+')').join('<br>'))+'</td><td>'+money(o.total)+'</td><td><select class="status-select" data-status="'+id+'">'+["Pending","Confirmed","Processing","Shipped","Delivered","Cancelled"].map(s=>'<option '+((o.status||"Pending")===s?"selected":"")+'>'+s+'</option>').join("")+'</select></td></tr>').join("");
+ const table=entries.length?'<table><thead><tr><th>Order ID</th><th>Customer</th><th>Phone</th><th>Items / Size / Color</th><th>Total</th><th>Status</th></tr></thead><tbody>'+html+'</tbody></table>':'<p class="muted">এখনো কোনো Order আসেনি।</p>';
  $("orderList").innerHTML=table;
  $("recentOrders").innerHTML=entries.length?'<table><thead><tr><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody>'+entries.slice(0,5).map(([,o])=>'<tr><td>'+escapeHtml(o.customer?.name)+'</td><td>'+money(o.total)+'</td><td>'+escapeHtml(o.status||"Pending")+'</td></tr>').join("")+'</tbody></table>':'<p class="muted">কোনো সাম্প্রতিক Order নেই।</p>';
 }

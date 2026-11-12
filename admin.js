@@ -1,16 +1,7 @@
-// M.R GAME ZONE Admin Panel
-// Firebase Authentication + basic admin navigation.
-// Product and order database actions will be added in a later step.
-
+// M.R GAME ZONE Admin Panel — Firebase Authentication + Realtime Database
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  setPersistence,
-  browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDSZDoy8qcAgGR_qk4vZ5rWGlvID4t8B7Q",
@@ -19,147 +10,89 @@ const firebaseConfig = {
   projectId: "mr-game-shop-9f914",
   storageBucket: "mr-game-shop-9f914.firebasestorage.app",
   messagingSenderId: "709309210572",
-  appId: "1:709309210572:web:02e664a71cee8165874769",
-  measurementId: "G-E6EWP7Y2R0"
+  appId: "1:709309210572:web:02e664a71cee8165874769"
 };
-
-// Only this Firebase Authentication account is allowed into the admin interface.
 const ADMIN_UID = "MYGho0eVmHMWPV9n9GFSmO3XvC62";
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getDatabase(app);
+const $ = id => document.getElementById(id);
+let products = {};
+let orders = {};
+let stopProducts = null;
+let stopOrders = null;
 
-const loginPage = document.getElementById("loginPage");
-const loginForm = document.getElementById("loginForm");
-const loginMsg = document.getElementById("loginMsg");
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-const adminApp = document.getElementById("app");
-const adminEmail = document.getElementById("adminEmail");
-const logoutBtn = document.getElementById("logoutBtn");
-const globalMsg = document.getElementById("globalMsg");
-
-function showLogin(message = "") {
-  loginPage?.classList.remove("hidden");
-  adminApp?.classList.add("hidden");
-  if (loginMsg) loginMsg.textContent = message;
+function showLogin(message="") {
+  $("loginPage")?.classList.remove("hidden");
+  $("app")?.classList.add("hidden");
+  if ($("loginMsg")) $("loginMsg").textContent=message;
 }
-
-function showAdmin(user) {
-  loginPage?.classList.add("hidden");
-  adminApp?.classList.remove("hidden");
-  if (adminEmail) adminEmail.textContent = user.email || "Admin";
-  showPage("dashboard");
+function showPage(name) {
+  ["dashboard","products","orders"].forEach(p=>$ (p+"Page")?.classList.toggle("hidden",p!==name));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.page===name));
+  $("pageTitle").textContent=({dashboard:"Dashboard",products:"Products",orders:"Orders"})[name]||"Dashboard";
 }
-
-function showPage(pageName) {
-  const pages = ["dashboard", "products", "orders"];
-  pages.forEach((name) => {
-    document.getElementById(name + "Page")?.classList.toggle("hidden", name !== pageName);
-  });
-
-  document.querySelectorAll(".nav-btn").forEach((button) => {
-    button.classList.toggle("active", button.dataset.page === pageName);
-  });
-
-  const titles = {
-    dashboard: "Dashboard",
-    products: "Products",
-    orders: "Orders"
-  };
-  const title = document.getElementById("pageTitle");
-  if (title) title.textContent = titles[pageName] || "Dashboard";
+function message(text) { if($("globalMsg")) $("globalMsg").textContent=text; }
+function escapeHtml(v) { return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function money(v) { return "৳"+Number(v||0).toLocaleString("en-BD"); }
+function authError(e) {
+ const map={"auth/invalid-email":"ইমেইল সঠিক নয়।","auth/user-not-found":"ব্যবহারকারী পাওয়া যায়নি।","auth/wrong-password":"পাসওয়ার্ড সঠিক নয়।","auth/invalid-credential":"ইমেইল অথবা পাসওয়ার্ড ভুল।","auth/too-many-requests":"কিছুক্ষণ পরে আবার চেষ্টা করুন।","auth/network-request-failed":"ইন্টারনেট সংযোগ পরীক্ষা করুন।","auth/unauthorized-domain":"Firebase Authorized domains-এ GitHub Pages domain যোগ করুন।"};
+ return map[e.code]||("Login ব্যর্থ: "+e.message);
 }
-
-function friendlyAuthError(error) {
-  const code = error?.code || "";
-  const messages = {
-    "auth/invalid-email": "ইমেইল ঠিকানাটি সঠিক নয়।",
-    "auth/user-disabled": "এই অ্যাকাউন্টটি বন্ধ করা হয়েছে।",
-    "auth/user-not-found": "এই ইমেইলে কোনো Firebase ব্যবহারকারী পাওয়া যায়নি।",
-    "auth/wrong-password": "পাসওয়ার্ড সঠিক নয়।",
-    "auth/invalid-credential": "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।",
-    "auth/too-many-requests": "অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।",
-    "auth/network-request-failed": "ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
-    "auth/operation-not-allowed": "Firebase-এ Email/Password sign-in চালু নেই।",
-    "auth/unauthorized-domain": "Firebase Authentication-এর Authorized domains-এ GitHub Pages domain যোগ করতে হবে।"
-  };
-  return messages[code] || ("Login ব্যর্থ হয়েছে: " + (error?.message || "অজানা সমস্যা"));
+function renderProducts() {
+ const entries=Object.entries(products);
+ $("productCount").textContent=entries.length;
+ $("productList").innerHTML=entries.length?'<table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>'+entries.map(([id,p])=>'<tr><td>'+escapeHtml(p.name)+'</td><td>'+money(p.price)+'</td><td>'+Number(p.stock||0)+'</td><td><div class="table-actions"><button class="small-btn" data-edit="'+id+'">Edit</button><button class="small-btn danger" data-delete="'+id+'">Delete</button></div></td></tr>').join("")+'</tbody></table>':'<p class="muted">এখনো কোনো Product যোগ করা হয়নি।</p>';
 }
-
-// Keep the signed-in session on this browser.
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error("Auth persistence error:", error);
-});
-
-loginForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (loginMsg) loginMsg.textContent = "Login হচ্ছে...";
-  const email = emailInput?.value.trim() || "";
-  const password = passwordInput?.value || "";
-
-  try {
-    const credential = await signInWithEmailAndPassword(auth, email, password);
-    if (credential.user.uid !== ADMIN_UID) {
-      await signOut(auth);
-      showLogin("এই অ্যাকাউন্টের Admin অনুমতি নেই।");
-      return;
-    }
-    if (passwordInput) passwordInput.value = "";
-    showAdmin(credential.user);
-  } catch (error) {
-    console.error("Admin login error:", error);
-    showLogin(friendlyAuthError(error));
-  }
-});
-
-logoutBtn?.addEventListener("click", async () => {
-  try {
-    await signOut(auth);
-    showLogin("আপনি সফলভাবে Logout করেছেন।");
-  } catch (error) {
-    console.error("Logout error:", error);
-    if (globalMsg) globalMsg.textContent = "Logout করা যায়নি। আবার চেষ্টা করুন।";
-  }
-});
-
-// Sidebar navigation
-document.querySelectorAll(".nav-btn").forEach((button) => {
-  button.addEventListener("click", () => showPage(button.dataset.page));
-});
-
-document.querySelectorAll("[data-goto]").forEach((button) => {
-  button.addEventListener("click", () => showPage(button.dataset.goto));
-});
-
-// Product form panel visibility only; database save/edit/delete is a separate next step.
-const productFormPanel = document.getElementById("productFormPanel");
-document.getElementById("newProductBtn")?.addEventListener("click", () => {
-  document.getElementById("productForm")?.reset();
-  const productId = document.getElementById("productId");
-  if (productId) productId.value = "";
-  const formTitle = document.getElementById("formTitle");
-  if (formTitle) formTitle.textContent = "Add product";
-  productFormPanel?.classList.remove("hidden");
-});
-function closeProductForm() {
-  productFormPanel?.classList.add("hidden");
+function renderOrders() {
+ const entries=Object.entries(orders).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+ $("orderCount").textContent=entries.length;
+ $("pendingCount").textContent=entries.filter(([,o])=>(o.status||"Pending")==="Pending").length;
+ const html=entries.map(([id,o])=>'<tr><td>'+escapeHtml(id.slice(-7))+'</td><td>'+escapeHtml(o.customer?.name)+'</td><td>'+escapeHtml(o.customer?.phone)+'</td><td>'+money(o.total)+'</td><td><select class="status-select" data-status="'+id+'">'+["Pending","Confirmed","Processing","Shipped","Delivered","Cancelled"].map(s=>'<option '+((o.status||"Pending")===s?"selected":"")+'>'+s+'</option>').join("")+'</select></td></tr>').join("");
+ const table=entries.length?'<table><thead><tr><th>Order ID</th><th>Customer</th><th>Phone</th><th>Total</th><th>Status</th></tr></thead><tbody>'+html+'</tbody></table>':'<p class="muted">এখনো কোনো Order আসেনি।</p>';
+ $("orderList").innerHTML=table;
+ $("recentOrders").innerHTML=entries.length?'<table><thead><tr><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody>'+entries.slice(0,5).map(([,o])=>'<tr><td>'+escapeHtml(o.customer?.name)+'</td><td>'+money(o.total)+'</td><td>'+escapeHtml(o.status||"Pending")+'</td></tr>').join("")+'</tbody></table>':'<p class="muted">কোনো সাম্প্রতিক Order নেই।</p>';
 }
-document.getElementById("cancelProductBtn")?.addEventListener("click", closeProductForm);
-document.getElementById("cancelProductBtn2")?.addEventListener("click", closeProductForm);
-
-// Restore the session and verify that the signed-in account is the configured admin.
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    showLogin();
-    return;
-  }
-
-  if (user.uid !== ADMIN_UID) {
-    await signOut(auth);
-    showLogin("এই অ্যাকাউন্টের Admin অনুমতি নেই।");
-    return;
-  }
-
-  showAdmin(user);
+function startDatabase() {
+ if(stopProducts) stopProducts(); if(stopOrders) stopOrders();
+ stopProducts=onValue(ref(db,"products"),snap=>{products=snap.val()||{};renderProducts();},e=>message("Product লোড হয়নি: "+e.message));
+ stopOrders=onValue(ref(db,"orders"),snap=>{orders=snap.val()||{};renderOrders();},e=>message("Order লোড হয়নি: "+e.message));
+}
+function resetProductForm() { $("productForm").reset(); $("productId").value=""; $("productStock").value="0"; $("formTitle").textContent="Add product"; }
+$("loginForm")?.addEventListener("submit",async e=>{
+ e.preventDefault(); $("loginMsg").textContent="Login হচ্ছে...";
+ try { const c=await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value); if(c.user.uid!==ADMIN_UID){await signOut(auth);showLogin("এই অ্যাকাউন্টের Admin অনুমতি নেই।");} else $("password").value=""; }
+ catch(err){showLogin(authError(err));}
+});
+$("logoutBtn")?.addEventListener("click",()=>signOut(auth));
+document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.goto)));
+$("newProductBtn")?.addEventListener("click",()=>{$("productFormPanel").classList.remove("hidden");resetProductForm();});
+function closeForm(){$("productFormPanel").classList.add("hidden");}
+$("cancelProductBtn")?.addEventListener("click",closeForm); $("cancelProductBtn2")?.addEventListener("click",closeForm);
+$("productForm")?.addEventListener("submit",async e=>{
+ e.preventDefault();
+ const id=$("productId").value;
+ const product={name:$("productName").value.trim(),price:Number($("productPrice").value),category:$("productCategory").value.trim(),stock:Number($("productStock").value||0),image:$("productImage").value.trim(),description:$("productDescription").value.trim(),active:true,updatedAt:Date.now()};
+ if(!product.name||!Number.isFinite(product.price)||product.price<0){message("Product name ও সঠিক price দিন।");return;}
+ try { const productRef=id?ref(db,"products/"+id):push(ref(db,"products")); await (id?update(productRef,product):set(productRef,{...product,createdAt:Date.now()})); closeForm();resetProductForm();message("Product সফলভাবে সংরক্ষণ হয়েছে।"); }
+ catch(err){message("সংরক্ষণ হয়নি: "+err.message);}
+});
+$("productList")?.addEventListener("click",async e=>{
+ const edit=e.target.closest("[data-edit]"),del=e.target.closest("[data-delete]");
+ if(edit){const id=edit.dataset.edit,p=products[id];if(!p)return;$("productId").value=id;$("productName").value=p.name||"";$("productPrice").value=p.price??"";$("productCategory").value=p.category||"";$("productStock").value=p.stock??0;$("productImage").value=p.image||"";$("productDescription").value=p.description||"";$("formTitle").textContent="Edit product";$("productFormPanel").classList.remove("hidden");}
+ if(del){const id=del.dataset.delete;if(confirm("এই Product মুছে ফেলবেন?"))try{await remove(ref(db,"products/"+id));message("Product মুছে ফেলা হয়েছে।");}catch(err){message("Delete ব্যর্থ: "+err.message);}}
+});
+$("orderList")?.addEventListener("change",async e=>{
+ const el=e.target.closest("[data-status]");if(!el)return;
+ try{await update(ref(db,"orders/"+el.dataset.status),{status:el.value,updatedAt:Date.now()});message("Order status আপডেট হয়েছে।");}
+ catch(err){message("Status পরিবর্তন হয়নি: "+err.message);}
+});
+$("refreshProducts")?.addEventListener("click",()=>message("Product তালিকা Realtime Database থেকে আপডেট হচ্ছে।"));
+$("refreshOrders")?.addEventListener("click",()=>message("Order তালিকা Realtime Database থেকে আপডেট হচ্ছে।"));
+setPersistence(auth,browserLocalPersistence).catch(console.error);
+onAuthStateChanged(auth,async user=>{
+ if(!user){if(stopProducts)stopProducts();if(stopOrders)stopOrders();showLogin();return;}
+ if(user.uid!==ADMIN_UID){await signOut(auth);showLogin("এই অ্যাকাউন্টের Admin অনুমতি নেই।");return;}
+ $("loginPage").classList.add("hidden");$("app").classList.remove("hidden");$("adminEmail").textContent=user.email||"Admin";showPage("dashboard");startDatabase();
 });

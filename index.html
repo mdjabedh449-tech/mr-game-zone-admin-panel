@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#080808">
-  <title>M.R GAME ZONE | Admin Panel</title>
+  <title>JSF FASHION WEAR | Admin Panel</title>
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>
   <section id="loginPage" class="login-wrap">
     <form id="loginForm" class="login-card">
-      <div class="brand-mark">MR</div>
+      <div class="brand-mark">JSF</div>
       <p class="eyebrow">CONTROL CENTER</p>
-      <h1>M.R GAME ZONE</h1>
+      <h1>JSF FASHION WEAR</h1>
       <p class="muted">Administrator sign in</p>
       <label for="email">Admin email</label>
       <input id="email" type="email" autocomplete="username" placeholder="admin@example.com" required>
@@ -25,7 +25,7 @@
 
   <div id="app" class="app hidden">
     <aside class="sidebar">
-      <div class="side-brand"><span class="brand-mark small">MR</span><div><b>M.R GAME ZONE</b><small>ADMIN PANEL</small></div></div>
+      <div class="side-brand"><span class="brand-mark small">MR</span><div><b>JSF FASHION WEAR</b><small>ADMIN PANEL</small></div></div>
       <nav>
         <button class="nav-btn active" data-page="dashboard">▦ <span>Dashboard</span></button>
         <button class="nav-btn" data-page="products">▣ <span>Products</span></button>
@@ -56,12 +56,14 @@
           <div class="panel-head"><h3 id="formTitle">Add product</h3><button id="cancelProductBtn" class="icon-btn" aria-label="Close">✕</button></div>
           <form id="productForm" class="form-grid">
             <input id="productId" type="hidden">
-            <div><label for="productName">Product name *</label><input id="productName" required maxlength="100" placeholder="Gaming headset"></div>
+            <div><label for="productName">Product name *</label><input id="productName" required maxlength="100" placeholder="যেমন: Classic Cotton T-Shirt"></div>
             <div><label for="productPrice">Price (৳) *</label><input id="productPrice" type="number" min="0" step="0.01" required placeholder="1500"></div>
-            <div><label for="productCategory">Category</label><input id="productCategory" maxlength="60" placeholder="Gaming Accessories"></div>
-            <div><label for="productStock">Stock</label><input id="productStock" type="number" min="0" step="1" value="0"></div>
+            <div><label for="productCategory">Category</label><select id="productCategory"><option value="T-Shirts">T-Shirts</option><option value="Oversized">Oversized</option><option value="Polo">Polo</option><option value="Printed">Printed</option><option value="Essentials">Essentials</option></select></div>
+            <div><label for="productStock">Stock / পিস</label><input id="productStock" type="number" min="0" step="1" value="0"></div>
+            <div><label for="productSizes">Available sizes (কমা দিয়ে লিখুন)</label><input id="productSizes" maxlength="100" value="S, M, L, XL, XXL" placeholder="S, M, L, XL, XXL"></div>
+            <div><label for="productColors">Available colors (কমা দিয়ে লিখুন)</label><input id="productColors" maxlength="150" value="Black, White" placeholder="Black, White, Navy"></div>
             <div class="wide"><label for="productImageFile">ফোনের Gallery থেকে ছবি বাছাই (সর্বোচ্চ ৫ MB)</label><input id="productImageFile" type="file" accept="image/*"><p id="imageUploadStatus" class="muted" aria-live="polite"></p><label for="productImage">Image URL (আপলোড করলে নিজে থেকেই বসবে)</label><input id="productImage" type="url" placeholder="ছবি আপলোড করলে URL এখানে আসবে"></div>
-            <div class="wide"><label for="productDescription">Description</label><textarea id="productDescription" rows="3" maxlength="1000" placeholder="Product details…"></textarea></div>
+            <div class="wide"><label for="productDescription">Description</label><textarea id="productDescription" rows="3" maxlength="1000" placeholder="কাপড়, ফিটিং, ডিজাইন ও অন্যান্য তথ্য লিখুন…"></textarea></div>
             <div class="wide form-actions"><button class="primary" type="submit">Save product</button><button id="cancelProductBtn2" class="secondary" type="button">Cancel</button></div>
           </form>
         </article>

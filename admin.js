@@ -2,6 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDSZDoy8qcAgGR_qk4vZ5rWGlvID4t8B7Q",
@@ -16,6 +17,7 @@ const ADMIN_UID = "MYGho0eVmHMWPV9n9GFSmO3XvC62";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
+const storage = getStorage(app);
 const $ = id => document.getElementById(id);
 let products = {};
 let orders = {};
@@ -58,7 +60,7 @@ function startDatabase() {
  stopProducts=onValue(ref(db,"products"),snap=>{products=snap.val()||{};renderProducts();},e=>message("Product লোড হয়নি: "+e.message));
  stopOrders=onValue(ref(db,"orders"),snap=>{orders=snap.val()||{};renderOrders();},e=>message("Order লোড হয়নি: "+e.message));
 }
-function resetProductForm() { $("productForm").reset(); $("productId").value=""; $("productStock").value="0"; $("formTitle").textContent="Add product"; }
+function resetProductForm() { $("productForm").reset(); $("productId").value=""; $("productStock").value="0"; $("formTitle").textContent="Add product"; $("imageUploadStatus").textContent=""; $("productImageFile").value=""; }
 $("loginForm")?.addEventListener("submit",async e=>{
  e.preventDefault(); $("loginMsg").textContent="Login হচ্ছে...";
  try { const c=await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value); if(c.user.uid!==ADMIN_UID){await signOut(auth);showLogin("এই অ্যাকাউন্টের Admin অনুমতি নেই।");} else $("password").value=""; }
@@ -68,6 +70,24 @@ $("logoutBtn")?.addEventListener("click",()=>signOut(auth));
 document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
 document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.goto)));
 $("newProductBtn")?.addEventListener("click",()=>{$("productFormPanel").classList.remove("hidden");resetProductForm();});
+$("productImageFile")?.addEventListener("change", async e=>{
+ const file=e.target.files?.[0]; if(!file)return;
+ if(!file.type.startsWith("image/")){message("শুধু ছবির ফাইল নির্বাচন করুন।");e.target.value="";return;}
+ if(file.size>5*1024*1024){message("ছবির সাইজ ৫ MB-এর কম হতে হবে।");e.target.value="";return;}
+ const status=$("imageUploadStatus"); status.textContent="ছবি আপলোড হচ্ছে...";
+ const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+ const path="product-images/"+Date.now()+"_"+safeName;
+ try{
+   const target=storageRef(storage,path);
+   await uploadBytes(target,file,{contentType:file.type});
+   const url=await getDownloadURL(target);
+   $("productImage").value=url;
+   status.textContent="ছবি আপলোড হয়েছে। Save product চাপুন।";
+ }catch(err){
+   status.textContent="আপলোড হয়নি: "+err.message;
+   message("Firebase Storage চালু ও Storage Rules ঠিক আছে কি না দেখুন।");
+ }
+});
 function closeForm(){$("productFormPanel").classList.add("hidden");}
 $("cancelProductBtn")?.addEventListener("click",closeForm); $("cancelProductBtn2")?.addEventListener("click",closeForm);
 $("productForm")?.addEventListener("submit",async e=>{

@@ -1,4 +1,4 @@
-// M.R GAME ZONE Admin Panel — Firebase Authentication + Realtime Database
+// JSF FASHION WEAR Admin Panel — Firebase Authentication + Realtime Database
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
@@ -42,7 +42,7 @@ function authError(e) {
 function renderProducts() {
  const entries=Object.entries(products);
  $("productCount").textContent=entries.length;
- $("productList").innerHTML=entries.length?'<table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>'+entries.map(([id,p])=>'<tr><td>'+escapeHtml(p.name)+'</td><td>'+money(p.price)+'</td><td>'+Number(p.stock||0)+'</td><td><div class="table-actions"><button class="small-btn" data-edit="'+id+'">Edit</button><button class="small-btn danger" data-delete="'+id+'">Delete</button></div></td></tr>').join("")+'</tbody></table>':'<p class="muted">এখনো কোনো Product যোগ করা হয়নি।</p>';
+ $("productList").innerHTML=entries.length?'<table><thead><tr><th>ছবি</th><th>টি-শার্ট</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>'+entries.map(([id,p])=>'<tr><td>'+(p.image?'<img class="product-thumb" src="'+escapeHtml(p.image)+'" alt="">':'—')+'</td><td>'+escapeHtml(p.name)+'<br><small>'+escapeHtml(p.sizes||"S, M, L, XL, XXL")+'</small></td><td>'+escapeHtml(p.category||"T-Shirts")+'</td><td>'+money(p.price)+'</td><td>'+Number(p.stock||0)+'</td><td><div class="table-actions"><button class="small-btn" data-edit="'+id+'">Edit</button><button class="small-btn danger" data-delete="'+id+'">Delete</button></div></td></tr>').join("")+'</tbody></table>':'<p class="muted">এখনো কোনো টি-শার্ট যোগ করা হয়নি।</p>';
 }
 function renderOrders() {
  const entries=Object.entries(orders).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
@@ -58,7 +58,7 @@ function startDatabase() {
  stopProducts=onValue(ref(db,"products"),snap=>{products=snap.val()||{};renderProducts();},e=>message("Product লোড হয়নি: "+e.message));
  stopOrders=onValue(ref(db,"orders"),snap=>{orders=snap.val()||{};renderOrders();},e=>message("Order লোড হয়নি: "+e.message));
 }
-function resetProductForm() { $("productForm").reset(); $("productId").value=""; $("productStock").value="0"; $("formTitle").textContent="Add product"; $("imageUploadStatus").textContent=""; $("productImageFile").value=""; }
+function resetProductForm() { $("productForm").reset(); $("productId").value=""; $("productStock").value="0"; $("productCategory").value="T-Shirts"; $("productSizes").value="S, M, L, XL, XXL"; $("productColors").value="Black, White"; $("formTitle").textContent="Add product"; $("imageUploadStatus").textContent=""; $("productImageFile").value=""; }
 $("loginForm")?.addEventListener("submit",async e=>{
  e.preventDefault(); $("loginMsg").textContent="Login হচ্ছে...";
  try { const c=await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value); if(c.user.uid!==ADMIN_UID){await signOut(auth);showLogin("এই অ্যাকাউন্টের Admin অনুমতি নেই।");} else $("password").value=""; }
@@ -92,14 +92,14 @@ $("cancelProductBtn")?.addEventListener("click",closeForm); $("cancelProductBtn2
 $("productForm")?.addEventListener("submit",async e=>{
  e.preventDefault();
  const id=$("productId").value;
- const product={name:$("productName").value.trim(),price:Number($("productPrice").value),category:$("productCategory").value.trim(),stock:Number($("productStock").value||0),image:$("productImage").value.trim(),description:$("productDescription").value.trim(),active:true,updatedAt:Date.now()};
+ const product={name:$("productName").value.trim(),price:Number($("productPrice").value),category:$("productCategory").value,stock:Number($("productStock").value||0),sizes:$("productSizes").value.trim()||"S, M, L, XL, XXL",colors:$("productColors").value.trim()||"Black, White",image:$("productImage").value.trim(),description:$("productDescription").value.trim(),active:true,updatedAt:Date.now()};
  if(!product.name||!Number.isFinite(product.price)||product.price<0){message("Product name ও সঠিক price দিন।");return;}
  try { const productRef=id?ref(db,"products/"+id):push(ref(db,"products")); await (id?update(productRef,product):set(productRef,{...product,createdAt:Date.now()})); closeForm();resetProductForm();message("Product সফলভাবে সংরক্ষণ হয়েছে।"); }
  catch(err){message("সংরক্ষণ হয়নি: "+err.message);}
 });
 $("productList")?.addEventListener("click",async e=>{
  const edit=e.target.closest("[data-edit]"),del=e.target.closest("[data-delete]");
- if(edit){const id=edit.dataset.edit,p=products[id];if(!p)return;$("productId").value=id;$("productName").value=p.name||"";$("productPrice").value=p.price??"";$("productCategory").value=p.category||"";$("productStock").value=p.stock??0;$("productImage").value=p.image||"";$("productDescription").value=p.description||"";$("formTitle").textContent="Edit product";$("productFormPanel").classList.remove("hidden");}
+ if(edit){const id=edit.dataset.edit,p=products[id];if(!p)return;$("productId").value=id;$("productName").value=p.name||"";$("productPrice").value=p.price??"";$("productCategory").value=p.category||"T-Shirts";$("productStock").value=p.stock??0;$("productSizes").value=p.sizes||"S, M, L, XL, XXL";$("productColors").value=p.colors||"Black, White";$("productImage").value=p.image||"";$("productDescription").value=p.description||"";$("formTitle").textContent="Edit product";$("productFormPanel").classList.remove("hidden");}
  if(del){const id=del.dataset.delete;if(confirm("এই Product মুছে ফেলবেন?"))try{await remove(ref(db,"products/"+id));message("Product মুছে ফেলা হয়েছে।");}catch(err){message("Delete ব্যর্থ: "+err.message);}}
 });
 $("orderList")?.addEventListener("change",async e=>{

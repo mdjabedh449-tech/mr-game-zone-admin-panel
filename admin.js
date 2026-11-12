@@ -2,7 +2,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDSZDoy8qcAgGR_qk4vZ5rWGlvID4t8B7Q",
@@ -17,7 +16,6 @@ const ADMIN_UID = "MYGho0eVmHMWPV9n9GFSmO3XvC62";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
-const storage = getStorage(app);
 const $ = id => document.getElementById(id);
 let products = {};
 let orders = {};
@@ -75,17 +73,18 @@ $("productImageFile")?.addEventListener("change", async e=>{
  if(!file.type.startsWith("image/")){message("শুধু ছবির ফাইল নির্বাচন করুন।");e.target.value="";return;}
  if(file.size>5*1024*1024){message("ছবির সাইজ ৫ MB-এর কম হতে হবে।");e.target.value="";return;}
  const status=$("imageUploadStatus"); status.textContent="ছবি আপলোড হচ্ছে...";
- const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
- const path="product-images/"+Date.now()+"_"+safeName;
  try{
-   const target=storageRef(storage,path);
-   await uploadBytes(target,file,{contentType:file.type});
-   const url=await getDownloadURL(target);
-   $("productImage").value=url;
+   const formData=new FormData();
+   formData.append("file",file);
+   formData.append("upload_preset","mrgamezone");
+   const response=await fetch("https://api.cloudinary.com/v1_1/phvmgyj9/image/upload",{method:"POST",body:formData});
+   const result=await response.json();
+   if(!response.ok) throw new Error(result.error?.message||"Cloudinary upload failed");
+   $("productImage").value=result.secure_url;
    status.textContent="ছবি আপলোড হয়েছে। Save product চাপুন।";
  }catch(err){
    status.textContent="আপলোড হয়নি: "+err.message;
-   message("Firebase Storage চালু ও Storage Rules ঠিক আছে কি না দেখুন।");
+   message("Cloudinary সেটিংস পরীক্ষা করুন: Upload Preset-এর নাম mrgamezone এবং Signing mode Unsigned হতে হবে।");
  }
 });
 function closeForm(){$("productFormPanel").classList.add("hidden");}

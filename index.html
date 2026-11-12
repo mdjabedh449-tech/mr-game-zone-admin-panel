@@ -60,7 +60,7 @@
             <div><label for="productPrice">Price (৳) *</label><input id="productPrice" type="number" min="0" step="0.01" required placeholder="1500"></div>
             <div><label for="productCategory">Category</label><input id="productCategory" maxlength="60" placeholder="Gaming Accessories"></div>
             <div><label for="productStock">Stock</label><input id="productStock" type="number" min="0" step="1" value="0"></div>
-            <div class="wide"><label for="productImage">Image URL</label><input id="productImage" type="url" placeholder="https://example.com/product.jpg"></div>
+            <div class="wide"><label for="productImageFile">ফোনের Gallery থেকে ছবি বাছাই (সর্বোচ্চ ৫ MB)</label><input id="productImageFile" type="file" accept="image/*"><p id="imageUploadStatus" class="muted" aria-live="polite"></p><label for="productImage">Image URL (আপলোড করলে নিজে থেকেই বসবে)</label><input id="productImage" type="url" placeholder="ছবি আপলোড করলে URL এখানে আসবে"></div>
             <div class="wide"><label for="productDescription">Description</label><textarea id="productDescription" rows="3" maxlength="1000" placeholder="Product details…"></textarea></div>
             <div class="wide form-actions"><button class="primary" type="submit">Save product</button><button id="cancelProductBtn2" class="secondary" type="button">Cancel</button></div>
           </form>

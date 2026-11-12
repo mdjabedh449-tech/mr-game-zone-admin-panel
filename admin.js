@@ -76,7 +76,7 @@ $("productImageFile")?.addEventListener("change", async e=>{
  try{
    const formData=new FormData();
    formData.append("file",file);
-   formData.append("upload_preset","mrgamezone");
+   formData.append("upload_preset","m.rgamezoon");
    const response=await fetch("https://api.cloudinary.com/v1_1/phvmgyj9/image/upload",{method:"POST",body:formData});
    const result=await response.json();
    if(!response.ok) throw new Error(result.error?.message||"Cloudinary upload failed");
@@ -84,7 +84,7 @@ $("productImageFile")?.addEventListener("change", async e=>{
    status.textContent="ছবি আপলোড হয়েছে। Save product চাপুন।";
  }catch(err){
    status.textContent="আপলোড হয়নি: "+err.message;
-   message("Cloudinary সেটিংস পরীক্ষা করুন: Upload Preset-এর নাম mrgamezone এবং Signing mode Unsigned হতে হবে।");
+   message("Cloudinary সেটিংস পরীক্ষা করুন: Upload Preset-এর নাম m.rgamezoon এবং Signing mode Unsigned হতে হবে।");
  }
 });
 function closeForm(){$("productFormPanel").classList.add("hidden");}
